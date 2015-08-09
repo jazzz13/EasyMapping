@@ -31,8 +31,8 @@
 + (NSDictionary *)serializeObject:(id)object withMapping:(EKObjectMapping *)mapping
 {
     NSMutableDictionary *representation = [NSMutableDictionary dictionary];
-
-    [mapping.propertyMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKPropertyMapping *propertyMapping, BOOL *stop) {
+    
+    [mapping.propertyMappings enumerateObjectsUsingBlock:^(id propertyMapping, NSUInteger idx, BOOL *stop) {
         [self setValueOnRepresentation:representation fromObject:object withPropertyMapping:propertyMapping];
     }];
     [mapping.hasOneMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKRelationshipMapping *mapping, BOOL *stop) {
@@ -86,12 +86,14 @@
 {
     NSMutableDictionary *representation = [NSMutableDictionary dictionary];
     
-    [mapping.propertyMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKPropertyMapping *propertyMapping, BOOL *stop) {
-        [self setValueOnRepresentation:representation
-                     fromManagedObject:object
-                   withPropertyMapping:propertyMapping
-                             inContext:context];
-    }];
+    [mapping.propertyMappings enumerateObjectsUsingBlock:^(id propertyMapping, NSUInteger idx, BOOL *stop)
+     {
+         [self setValueOnRepresentation:representation
+                      fromManagedObject:object
+                    withPropertyMapping:propertyMapping
+                              inContext:context];
+     }];
+    
     [mapping.hasOneMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKRelationshipMapping *mapping, BOOL *stop) {
         id hasOneObject = [object valueForKey:mapping.property];
         
@@ -145,9 +147,9 @@
             withPropertyMapping:(EKPropertyMapping *)propertyMapping inContext:(NSManagedObjectContext *)context
 {
     id returnedValue = [object valueForKey:propertyMapping.property];
-
+    
     if (returnedValue) {
-
+        
         if (propertyMapping.managedReverseBlock) {
             returnedValue = propertyMapping.managedReverseBlock(returnedValue,context);
         }

@@ -56,7 +56,7 @@
 /**
  Dictionary, containing property mappings for current object.
  */
-@property (nonatomic, strong, readonly) NSMutableDictionary *propertyMappings;
+@property (nonatomic, strong, readonly) NSMutableArray *propertyMappings;
 
 /**
  Dictionary, containing to-one relationships of current object.

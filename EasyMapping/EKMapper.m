@@ -33,7 +33,7 @@
     NSParameterAssert([mapping isKindOfClass:[EKObjectMapping class]]);
     
     if (![externalRepresentation isKindOfClass:[NSDictionary class]] ||
-                ![mapping isKindOfClass:[EKObjectMapping class]])
+        ![mapping isKindOfClass:[EKObjectMapping class]])
     {
         return nil;
     }
@@ -46,42 +46,45 @@
      withMapping:(EKObjectMapping *)mapping
 {
     NSDictionary *representation = [EKPropertyHelper extractRootPathFromExternalRepresentation:externalRepresentation withMapping:mapping];
-    [mapping.propertyMappings enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL *stop) {
+    
+    [mapping.propertyMappings enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop){
+        
         [EKPropertyHelper setProperty:obj
                              onObject:object
                    fromRepresentation:representation
                   respectPropertyType:mapping.respectPropertyFoundationTypes];
     }];
+    
     [mapping.hasOneMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKRelationshipMapping * valueMapping, BOOL *stop) {
         NSDictionary * value = [valueMapping extractObjectFromRepresentation:representation];
-		 if (value && value != (id)[NSNull null]) {
-			 id result = [self objectFromExternalRepresentation:value withMapping:[valueMapping objectMapping]];
-			 [object setValue:result forKeyPath:valueMapping.property];
-		 } else {
-			 [object setValue:nil forKey:valueMapping.property];
-		 }
+        if (value && value != (id)[NSNull null]) {
+            id result = [self objectFromExternalRepresentation:value withMapping:[valueMapping objectMapping]];
+            [object setValue:result forKeyPath:valueMapping.property];
+        } else {
+            [object setValue:nil forKey:valueMapping.property];
+        }
     }];
     [mapping.hasManyMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKRelationshipMapping * valueMapping, BOOL *stop) {
-		 NSArray *arrayToBeParsed = [representation valueForKeyPath:key];
-		 if (arrayToBeParsed && arrayToBeParsed != (id)[NSNull null]) {
-			 NSArray *parsedArray = [self arrayOfObjectsFromExternalRepresentation:arrayToBeParsed
-                                                                       withMapping:[valueMapping objectMapping]];
-             id parsedObjects = [EKPropertyHelper propertyRepresentation:parsedArray
-                                                               forObject:object
-                                                        withPropertyName:[valueMapping property]];
-
-             id _value = [object valueForKeyPath:valueMapping.property];
-             
-             if(mapping.incrementalData && _value!=nil) {
-                 _value = [_value arrayByAddingObjectsFromArray:parsedObjects];
-                 [object setValue:_value forKey:valueMapping.property];
-             }
-             else {
-                 [object setValue:parsedObjects forKeyPath:valueMapping.property];
-             }
-		 } else if(!mapping.incrementalData) {
-			 [object setValue:nil forKey:valueMapping.property];
-		 }
+        NSArray *arrayToBeParsed = [representation valueForKeyPath:key];
+        if (arrayToBeParsed && arrayToBeParsed != (id)[NSNull null]) {
+            NSArray *parsedArray = [self arrayOfObjectsFromExternalRepresentation:arrayToBeParsed
+                                                                      withMapping:[valueMapping objectMapping]];
+            id parsedObjects = [EKPropertyHelper propertyRepresentation:parsedArray
+                                                              forObject:object
+                                                       withPropertyName:[valueMapping property]];
+            
+            id _value = [object valueForKeyPath:valueMapping.property];
+            
+            if(mapping.incrementalData && _value!=nil) {
+                _value = [_value arrayByAddingObjectsFromArray:parsedObjects];
+                [object setValue:_value forKey:valueMapping.property];
+            }
+            else {
+                [object setValue:parsedObjects forKeyPath:valueMapping.property];
+            }
+        } else if(!mapping.incrementalData) {
+            [object setValue:nil forKey:valueMapping.property];
+        }
     }];
     return object;
 }

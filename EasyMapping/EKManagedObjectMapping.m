@@ -56,7 +56,7 @@
     if (self)
     {
         _entityName = entityName;
-        _propertyMappings = [NSMutableDictionary dictionary];
+        _propertyMappings = [NSMutableArray new];
         _hasOneMappings = [NSMutableDictionary dictionary];
         _hasManyMappings = [NSMutableDictionary dictionary];
     }
@@ -76,15 +76,17 @@
 - (EKPropertyMapping *)primaryKeyPropertyMapping
 {
     __block EKPropertyMapping * primaryKeyMapping = nil;
-    [self.propertyMappings enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL * stop)
-    {
-        EKPropertyMapping * mapping = obj;
-        if ([mapping.property isEqualToString:self.primaryKey])
-        {
-            primaryKeyMapping = mapping;
-            *stop = YES;
-        }
-    }];
+    
+    [self.propertyMappings enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+     {
+         EKPropertyMapping * mapping = obj;
+         if ([mapping.property isEqualToString:self.primaryKey])
+         {
+             primaryKeyMapping = mapping;
+             *stop = YES;
+         }
+     }];
+    
     return primaryKeyMapping;
 }
 
@@ -98,7 +100,7 @@
     mapping.property = property;
     mapping.keyPath = keyPath;
     mapping.managedValueBlock = valueBlock;
-    [self addPropertyMappingToDictionary:mapping];
+    [self addPropertyMapping:mapping];
 }
 
 -(void)mapKeyPath:(NSString *)keyPath toProperty:(NSString *)property withValueBlock:(EKManagedMappingValueBlock)valueBlock reverseBlock:(EKManagedMappingReverseValueBlock)reverseBlock
@@ -113,12 +115,12 @@
     mapping.keyPath = keyPath;
     mapping.managedValueBlock = valueBlock;
     mapping.managedReverseBlock = reverseBlock;
-    [self addPropertyMappingToDictionary:mapping];
+    [self addPropertyMapping:mapping];
 }
 
-- (void)addPropertyMappingToDictionary:(EKPropertyMapping *)mapping
+- (void)addPropertyMapping:(EKPropertyMapping *)mapping
 {
-    [self.propertyMappings setObject:mapping forKey:mapping.keyPath];
+    [self.propertyMappings addObject:mapping];
 }
 
 @end

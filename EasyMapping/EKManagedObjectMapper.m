@@ -66,48 +66,50 @@
 {
     NSDictionary * representation = [EKPropertyHelper extractRootPathFromExternalRepresentation:externalRepresentation
                                                                                     withMapping:mapping];
-    [mapping.propertyMappings enumerateKeysAndObjectsUsingBlock:^(id key, id obj, BOOL * stop)
-    {
-        [EKPropertyHelper setProperty:obj
-                             onObject:object
-                   fromRepresentation:representation
-                            inContext:self.importer.context
-         respectPropertyType:mapping.respectPropertyFoundationTypes];
-    }];
+    
+    [mapping.propertyMappings enumerateObjectsUsingBlock:^(id obj, NSUInteger idx, BOOL *stop)
+     {
+         [EKPropertyHelper setProperty:obj
+                              onObject:object
+                    fromRepresentation:representation
+                             inContext:self.importer.context
+                   respectPropertyType:mapping.respectPropertyFoundationTypes];
+     }];
+    
     [mapping.hasOneMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKRelationshipMapping * relationship, BOOL * stop)
-    {
-        NSDictionary * value = [relationship extractObjectFromRepresentation:representation];
-        if (value && value != (id)[NSNull null])
-        {
-            id result = [self objectFromExternalRepresentation:value withMapping:(EKManagedObjectMapping *)[relationship objectMapping]];
-            [EKPropertyHelper setValue:result onObject:object forKeyPath:relationship.property];
-        }
-    }];
+     {
+         NSDictionary * value = [relationship extractObjectFromRepresentation:representation];
+         if (value && value != (id)[NSNull null])
+         {
+             id result = [self objectFromExternalRepresentation:value withMapping:(EKManagedObjectMapping *)[relationship objectMapping]];
+             [EKPropertyHelper setValue:result onObject:object forKeyPath:relationship.property];
+         }
+     }];
     [mapping.hasManyMappings enumerateKeysAndObjectsUsingBlock:^(id key, EKRelationshipMapping * relationship, BOOL * stop)
-    {
-        NSArray * arrayToBeParsed = [representation valueForKeyPath:key];
-        if (arrayToBeParsed && arrayToBeParsed != (id)[NSNull null])
-        {
-            NSArray * parsedArray = [self arrayOfObjectsFromExternalRepresentation:arrayToBeParsed
-                                                                       withMapping:(EKManagedObjectMapping *)[relationship objectMapping]];
-            id parsedObjects = [EKPropertyHelper propertyRepresentation:parsedArray
-                                                              forObject:object
-                                                       withPropertyName:[relationship property]];
-            if(mapping.incrementalData) {
-                [EKPropertyHelper addValue:parsedObjects onObject:object forKeyPath:relationship.property];
-            }
-            else {
-                [EKPropertyHelper setValue:parsedObjects onObject:object forKeyPath:relationship.property];
-            }
-        }
-    }];
+     {
+         NSArray * arrayToBeParsed = [representation valueForKeyPath:key];
+         if (arrayToBeParsed && arrayToBeParsed != (id)[NSNull null])
+         {
+             NSArray * parsedArray = [self arrayOfObjectsFromExternalRepresentation:arrayToBeParsed
+                                                                        withMapping:(EKManagedObjectMapping *)[relationship objectMapping]];
+             id parsedObjects = [EKPropertyHelper propertyRepresentation:parsedArray
+                                                               forObject:object
+                                                        withPropertyName:[relationship property]];
+             if(mapping.incrementalData) {
+                 [EKPropertyHelper addValue:parsedObjects onObject:object forKeyPath:relationship.property];
+             }
+             else {
+                 [EKPropertyHelper setValue:parsedObjects onObject:object forKeyPath:relationship.property];
+             }
+         }
+     }];
     return object;
 }
 
 - (NSArray *)arrayOfObjectsFromExternalRepresentation:(NSArray *)externalRepresentation
                                           withMapping:(EKManagedObjectMapping *)mapping
 {
-
+    
     NSMutableArray * array = [NSMutableArray array];
     for (NSDictionary * representation in externalRepresentation)
     {
@@ -123,12 +125,12 @@
 {
     NSAssert(mapping.primaryKey, @"A mapping with a primary key is required");
     EKPropertyMapping * primaryKeyPropertyMapping = [mapping primaryKeyPropertyMapping];
-
+    
     // Create a dictionary that maps primary keys to existing objects
     NSArray * existing = [self.importer.context executeFetchRequest:fetchRequest error:NULL];
     NSDictionary * existingByPK = [NSDictionary dictionaryWithObjects:existing
                                                               forKeys:[existing valueForKey:primaryKeyPropertyMapping.property]];
-
+    
     NSMutableArray * array = [NSMutableArray array];
     for (NSDictionary * representation in externalRepresentation)
     {
@@ -137,22 +139,22 @@
                                                       fromRepresentation:representation
                                                                inContext:self.importer.context];
         id object = [existingByPK objectForKey:primaryKeyValue];
-
+        
         // Create a new object if necessary
         if (!object)
             object = [NSEntityDescription insertNewObjectForEntityForName:mapping.entityName
                                                    inManagedObjectContext:self.importer.context];
-
+        
         [self fillObject:object fromExternalRepresentation:representation withMapping:mapping];
         [array addObject:object];
     }
-
+    
     // Any object returned by the fetch request not in the external represntation has to be deleted
     NSMutableSet * toDelete = [NSMutableSet setWithArray:existing];
     [toDelete minusSet:[NSSet setWithArray:array]];
     for (NSManagedObject * o in toDelete)
         [self.importer.context deleteObject:o];
-
+    
     return [NSArray arrayWithArray:array];
 }
 
@@ -202,7 +204,7 @@
     EKCoreDataImporter * importer = [EKCoreDataImporter importerWithMapping:mapping
                                                      externalRepresentation:externalRepresentation
                                                                     context:context];
-
+    
     return [[self mapperWithImporter:importer] arrayOfObjectsFromExternalRepresentation:externalRepresentation
                                                                             withMapping:mapping];
 }
